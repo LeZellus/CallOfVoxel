@@ -4,19 +4,25 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
     public int worldSize = 5; // Size of the world in number of chunks
-    private int chunkSize = 16; // Assuming chunk size is 16x16x16
+    public int chunkSize = 16; // Assuming chunk size is 16x16x16
 
     private Dictionary<Vector3, Chunk> chunks;
     public static World Instance { get; private set; }
 
     public Material VoxelMaterial;
 
+    public int noiseSeed = 1234;
+    public float maxHeight = 0.2f;
+    public float noiseScale = 4000f;
+    public float[,] noiseArray;
+
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Optional: if you want this to persist across scenes
+            DontDestroyOnLoad(gameObject);
+            noiseArray = GlobalNoise.GetNoise();// Optional: if you want this to persist across scenes
         }
         else
         {

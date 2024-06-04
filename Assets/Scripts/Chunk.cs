@@ -264,13 +264,16 @@ public class Chunk : MonoBehaviour
 
     private Voxel.VoxelType DetermineVoxelType(float x, float y, float z)
     {
-        float noiseValue = Noise.CalcPixel3D((int)x, (int)y, (int)z, 0.1f);
+        float noiseValue = GlobalNoise.GetGlobalNoiseValue(x, z, World.Instance.noiseArray);
 
-        float threshold = 125f; // The threshold for determining solid/air
+        // Normalize noise value to [0, 1]
+        float normalizedNoiseValue = (noiseValue + 1) / 2;
 
-        //Debug.Log(noiseValue);
+        // Calculate maxHeight
+        float maxHeight = normalizedNoiseValue * World.Instance.maxHeight;
 
-        if (noiseValue > threshold)
+
+        if (y <= maxHeight)
             return Voxel.VoxelType.Grass; // Solid voxel
         else
             return Voxel.VoxelType.Air; // Air voxel
