@@ -1,3 +1,4 @@
+using SimplexNoise;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,7 +43,10 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z < chunkSize; z++)
                 {
-                    voxels[x, y, z] = new Voxel(transform.position + new Vector3(x, y, z), Color.white);
+                    // Use world coordinates for noise sampling
+                    Vector3 worldPos = transform.position + new Vector3(x, y, z);
+                    Voxel.VoxelType type = DetermineVoxelType(worldPos.x, worldPos.y, worldPos.z);
+                    voxels[x, y, z] = new Voxel(worldPos, type, type != Voxel.VoxelType.Air);
                 }
             }
         }
@@ -258,4 +262,17 @@ public class Chunk : MonoBehaviour
         return false;
     }
 
+    private Voxel.VoxelType DetermineVoxelType(float x, float y, float z)
+    {
+        float noiseValue = Noise.CalcPixel3D((int)x, (int)y, (int)z, 0.1f);
+
+        float threshold = 125f; // The threshold for determining solid/air
+
+        //Debug.Log(noiseValue);
+
+        if (noiseValue > threshold)
+            return Voxel.VoxelType.Grass; // Solid voxel
+        else
+            return Voxel.VoxelType.Air; // Air voxel
+    }
 }
