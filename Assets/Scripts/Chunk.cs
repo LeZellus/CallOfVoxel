@@ -95,10 +95,12 @@ public class Chunk : MonoBehaviour
 
     private bool IsFaceVisible(int x, int y, int z)
     {
-        // Check if the neighboring voxel in the given direction is inactive or out of bounds
-        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize || z < 0 || z >= chunkSize)
-            return true; // Face is at the boundary of the chunk
-        return !voxels[x, y, z].isActive;
+        // Convert local chunk coordinates to global coordinates
+        Vector3 globalPos = transform.position + new Vector3(x, y, z);
+
+        // Check if the neighboring voxel is inactive or out of bounds in the current chunk
+        // and also if it's inactive or out of bounds in the world (neighboring chunks)
+        return IsVoxelHiddenInChunk(x, y, z) && IsVoxelHiddenInWorld(globalPos);
     }
 
     private void AddFaceData(int x, int y, int z, int faceIndex)
@@ -214,4 +216,46 @@ public class Chunk : MonoBehaviour
         // Apply a material or texture if needed
         meshRenderer.material = World.Instance.VoxelMaterial;
     }
+
+    private bool IsVoxelHiddenInChunk(int x, int y, int z)
+    {
+        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize || z < 0 || z >= chunkSize)
+            return true; // Face is at the boundary of the chunk
+        return !voxels[x, y, z].isActive;
+    }
+
+    private bool IsVoxelHiddenInWorld(Vector3 globalPos)
+    {
+        // Check if there is a chunk at the global position
+        Chunk neighborChunk = World.Instance.GetChunkAt(globalPos);
+        if (neighborChunk == null)
+        {
+            // No chunk at this position, so the voxel face should be hidden
+            return true;
+        }
+
+        // Convert the global position to the local position within the neighboring chunk
+        Vector3 localPos = neighborChunk.transform.InverseTransformPoint(globalPos);
+
+        // If the voxel at this local position is inactive, the face should be visible (not hidden)
+        return !neighborChunk.IsVoxelActiveAt(localPos);
+    }
+    public bool IsVoxelActiveAt(Vector3 localPosition)
+    {
+        // Round the local position to get the nearest voxel index
+        int x = Mathf.RoundToInt(localPosition.x);
+        int y = Mathf.RoundToInt(localPosition.y);
+        int z = Mathf.RoundToInt(localPosition.z);
+
+        // Check if the indices are within the bounds of the voxel array
+        if (x >= 0 && x < chunkSize && y >= 0 && y < chunkSize && z >= 0 && z < chunkSize)
+        {
+            // Return the active state of the voxel at these indices
+            return voxels[x, y, z].isActive;
+        }
+
+        // If out of bounds, consider the voxel inactive
+        return false;
+    }
+
 }
